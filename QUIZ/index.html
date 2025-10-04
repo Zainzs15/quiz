@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Simple Quiz App</title>
+    <style>
+        :root {
+            --bg: #0f1724;
+            --card: #0b1220;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --green: #10b981;
+            --red: #ef4444
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: Inter, ui-sans-serif, system-ui, Segoe UI, Roboto, "Helvetica Neue", Arial;
+            margin: 0;
+            background: linear-gradient(180deg, #071029, #0b1220);
+            color: #e6eef8;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px
+        }
+
+        .container {
+            width: 900px;
+            max-width: 100%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(2, 6, 23, 0.7)
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-size: 20px
+        }
+
+        .subjects {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px
+        }
+
+        .subject-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--muted)
+        }
+
+        .subject-btn.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 6px 18px rgba(56, 189, 248, 0.06)
+        }
+
+        .card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            padding: 18px;
+            border-radius: 10px
+        }
+
+        .question {
+            font-size: 18px;
+            margin-bottom: 12px
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            /* color: white; */
+        }
+
+        .option {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            cursor: pointer;
+            background-color: whitesmoke;
+        }
+
+        .option:hover {
+            transform: translateY(-2px);
+            /* color: white; */
+        }
+
+        .option.correct {
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.06));
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .option.wrong {
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.06));
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 16px
+        }
+
+        .btn {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer
+        }
+
+        .btn.primary {
+            background: var(--accent);
+            color: #011627
+        }
+
+        .btn.ghost {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--muted)
+        }
+
+        .summary {
+            text-align: center;
+            padding: 18px
+        }
+
+        .score {
+            font-size: 34px;
+            margin: 8px 0
+        }
+
+        .small {
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .footer {
+            display: flex;
+            gap: 12px;
+            align-items: center
+        }
+
+        @media (max-width:600px) {
+            .options {
+                grid-template-columns: 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Quiz App (MADE BY ZAIN) — Select subject & start</h1>
+        <div class="subjects" id="subjects"></div>
+
+        <div class="card" id="quizCard" hidden>
+            <div class="question" id="questionText"></div>
+            <div class="options" id="options"></div>
+            <div class="controls">
+                <div class="small" id="progressText"></div>
+                <div>
+                    <button class="btn ghost" id="prevBtn">Previous</button>
+                    <button class="btn primary" id="nextBtn">Next</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="summaryCard" hidden>
+            <div class="summary">
+                <div class="small">Quiz finished</div>
+                <div class="score" id="scorePercent">0%</div>
+                <div class="small" id="scoreText"></div>
+                <div style="margin-top:12px" class="footer">
+                    <button class="btn primary" id="retryBtn">Retry same subject</button>
+                    <button class="btn ghost" id="homeBtn">Choose another subject</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top:12px;color:var(--muted);font-size:13px">Tip: Click an answer — it will show correct or
+            wrong immediately. At the end you'll see your percentage.</div>
+    </div>
+
+    <script>
+        // QUESTIONS DATA - add, remove, or edit questions here
+        const QUIZ_DATA = {
+            Math: [
+                { q: 'What is 12 × 8?', choices: ['96', '86', '108', '92'], a: 0 },
+                { q: 'Solve: (3 + 5) × 2', choices: ['11', '16', '10', '8'], a: 1 },
+                { q: 'What is the value of π (approx)?', choices: ['2.14', '3.14', '4.14', '3.41'], a: 1 }
+            ],
+            Chemistry: [
+                { q: 'the branch of chemistry that deals with hydrocarbon:?', choices: ["industrial chemistry", "inorganic chemistry", "organic chemistry", "physical chemistry"], a: 2 },
+                { q: 'the atomic mass of an element expressed in grams is :', choices: ['gram molecular mass', 'gram atomic mass', 'gram formula mass', 'mole'], a: 1 },
+                { q: 'a piece of matter in pure form is termed as', choices: ['substance', 'mixture', 'compound', 'radicals'], a: 0 },
+                { q: 'in universal science chemistry purely deals with the', choices: ['energy', 'chemical properties', 'chemical reaction', 'matter'], a: 3 },
+                { q: 'in nature matter is changing', choices: ['sometimes', 'continously', 'both', 'none of them'], a: 1 },
+                { q: 'he proposed the idea of an atom', choices: ['aristotle', 'democritus', 'plato', 'lavoiser'], a: 1 },
+                { q: 'electrons was discovered by', choices: ['jj thomson', 'goldstien', 'rutherford', 'james chadwick'], a: 0 },
+                { q: 'atomic number of oxygen is', choices: ['9', '47', '8', '16'], a: 2 },
+                { q: 'the rays which deflected towards negative pole in electric or magnetic field is known as', choices: ['beta rays', 'gamma rays', 'alpha rays', 'none'], a: 2 },
+                { q: '', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                { q: 'Atomic number is number of which subatomic particle?', choices: ['Electrons', 'Protons', 'Neutrons', 'Isotopes'], a: 2 },
+                
+            ],
+            Computer: [
+                { q: 'HTML stands for?', choices: ['Hyper Text Markup Language', 'High Text Machine Language', 'Hyperlinking Text Mark Language', 'None'], a: 0 },
+                { q: 'Which is a programming language?', choices: ['CSS', 'HTML', 'JavaScript', 'SVG'], a: 2 },
+                { q: 'What does CSS control?', choices: ['Structure', 'Behavior', 'Styling', 'Data storage'], a: 2 }
+            ],
+            Physics: [
+                { q: 'Unit of force is?', choices: ['Joule', 'Newton', 'Pascal', 'Watt'], a: 1 },
+                { q: 'Speed of light roughly?', choices: ['3×10^5 m/s', '3×10^6 m/s', '3×10^8 m/s', '3×10^9 m/s'], a: 2 },
+                { q: 'Gravity on Earth near?', choices: ['9.8 m/s^2', '8.9 m/s^2', '10.8 m/s^2', '1.6 m/s^2'], a: 0 }
+            ]
+        }
+
+        // App state
+        let currentSubject = null
+        let questions = []
+        let currentIndex = 0
+        let score = 0
+        const userAnswers = []
+
+        // DOM
+        const subjectsEl = document.getElementById('subjects')
+        const quizCard = document.getElementById('quizCard')
+        const summaryCard = document.getElementById('summaryCard')
+        const questionText = document.getElementById('questionText')
+        const optionsEl = document.getElementById('options')
+        const progressText = document.getElementById('progressText')
+        const questionData = () => questions[currentIndex]
+        const prevBtn = document.getElementById('prevBtn')
+        const nextBtn = document.getElementById('nextBtn')
+        const scorePercent = document.getElementById('scorePercent')
+        const scoreText = document.getElementById('scoreText')
+        const retryBtn = document.getElementById('retryBtn')
+        const homeBtn = document.getElementById('homeBtn')
+
+        // render subject buttons
+        function renderSubjects() {
+            subjectsEl.innerHTML = ''
+            Object.keys(QUIZ_DATA).forEach(sub => {
+                const btn = document.createElement('button')
+                btn.className = 'subject-btn'
+                btn.textContent = sub
+                btn.onclick = () => startSubject(sub, btn)
+                subjectsEl.appendChild(btn)
+            })
+        }
+
+        function startSubject(sub, btnEl) {
+            // mark active
+            Array.from(subjectsEl.children).forEach(b => b.classList.remove('active'))
+            btnEl.classList.add('active')
+
+            currentSubject = sub
+            questions = JSON.parse(JSON.stringify(QUIZ_DATA[sub])) // clone
+            currentIndex = 0
+            score = 0
+            userAnswers.length = 0
+            quizCard.hidden = false
+            summaryCard.hidden = true
+            renderQuestion()
+        }
+
+        function renderQuestion() {
+            const q = questionData()
+            questionText.textContent = q.q
+            optionsEl.innerHTML = ''
+            progressText.textContent = `Question ${currentIndex + 1} of ${questions.length}`
+
+            q.choices.forEach((ch, idx) => {
+                const div = document.createElement('button')
+                div.className = 'option'
+                div.innerHTML = ch
+                div.onclick = () => handleAnswer(idx, div)
+                optionsEl.appendChild(div)
+            })
+
+            // previous/next visibility
+            prevBtn.disabled = currentIndex === 0
+            nextBtn.textContent = currentIndex === questions.length - 1 ? 'Finish' : 'Next'
+        }
+
+        function handleAnswer(choiceIdx, el) {
+            // prevent double-answering
+            if (userAnswers[currentIndex] != null) return
+
+            const q = questionData()
+            const isCorrect = choiceIdx === q.a
+            userAnswers[currentIndex] = { choice: choiceIdx, correct: isCorrect }
+            // highlight
+            Array.from(optionsEl.children).forEach((opt, i) => {
+                opt.disabled = true
+                if (i === q.a) opt.classList.add('correct')
+                if (i === choiceIdx && !isCorrect) opt.classList.add('wrong')
+            })
+
+            if (isCorrect) score++
+
+            // auto-enable next after short delay for UX
+            setTimeout(() => {
+                // if last question, show summary
+                if (currentIndex === questions.length - 1) showSummary()
+            }, 350)
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentIndex === 0) return
+            currentIndex--
+            renderQuestion()
+            // if previously answered, show highlights
+            restoreHighlights()
+        })
+
+        nextBtn.addEventListener('click', () => {
+            // if not answered, treat as skip (optional). We'll allow moving forward.
+            if (currentIndex < questions.length - 1) {
+                currentIndex++
+                renderQuestion()
+                restoreHighlights()
+            } else {
+                // finish
+                showSummary()
+            }
+        })
+
+        function restoreHighlights() {
+            const ans = userAnswers[currentIndex]
+            if (!ans) return
+            const q = questionData()
+            Array.from(optionsEl.children).forEach((opt, i) => {
+                opt.disabled = true
+                if (i === q.a) opt.classList.add('correct')
+                if (i === ans.choice && !ans.correct) opt.classList.add('wrong')
+            })
+        }
+
+        function showSummary() {
+            quizCard.hidden = true
+            summaryCard.hidden = false
+            const percent = Math.round((score / questions.length) * 100)
+            scorePercent.textContent = percent + '%'
+            scoreText.textContent = `${score} of ${questions.length} correct`
+        }
+
+        retryBtn.addEventListener('click', () => {
+            // restart current subject
+            startSubject(currentSubject, Array.from(subjectsEl.children).find(b => b.textContent === currentSubject))
+        })
+
+        homeBtn.addEventListener('click', () => {
+            // go back to subject selection
+            quizCard.hidden = true
+            summaryCard.hidden = true
+            Array.from(subjectsEl.children).forEach(b => b.classList.remove('active'))
+        })
+
+        // initial render
+        renderSubjects()
+    </script>
+</body>
+
+</html>
